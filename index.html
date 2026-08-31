@@ -18,10 +18,7 @@
             color: #333;
         }
         
-        #app-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        #app-container { max-width: 1200px; margin: 0 auto; }
 
         /* 動態倒數計時器樣式 */
         #countdown-container {
@@ -35,16 +32,13 @@
         }
 
         /* 日曆容器樣式 */
-        #calendar-container {
-            background: white; padding: 20px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
+        #calendar-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 
         .fc-button-primary { background-color: #2c3e50 !important; border-color: #2c3e50 !important; }
         .fc-button-primary:hover { background-color: #1a252f !important; }
         .fc-button-active { background-color: #18bc9c !important; border-color: #18bc9c !important; }
 
-        /* 放假日(週六、週日、國定假日) 顯示為紅色 */
+        /* 放假日 顯示為紅色 */
         .fc-day-sat, .fc-day-sun, .holiday-red { background-color: #fff5f5 !important; }
         .fc-col-header-cell.fc-day-sat a, .fc-col-header-cell.fc-day-sun a { color: #e74c3c !important; }
         .fc-day-sat .fc-daygrid-day-number, .fc-day-sun .fc-daygrid-day-number, .holiday-red .fc-daygrid-day-number { 
@@ -54,26 +48,21 @@
         /* 組合式彈出視窗 (Modal) 樣式 */
         #modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 9999;
-            justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center;
         }
         #custom-modal {
-            background: white; padding: 25px; border-radius: 12px; width: 380px;
+            background: white; padding: 25px; border-radius: 12px; width: 400px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
         #custom-modal h3 { margin-top: 0; color: #2c3e50; text-align: center; }
         
-        .combo-row {
-            display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+        .combo-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .combo-row input {
+            flex: 1; padding: 8px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;
         }
-        .combo-row select {
-            flex: 1; padding: 8px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc;
-        }
-        .mini-btn {
-            padding: 6px 10px; font-size: 14px; border: none; border-radius: 4px; cursor: pointer; color: white;
-        }
-        .btn-add { background-color: #3498db; }
-        .btn-del { background-color: #e74c3c; }
+        .mini-btn { padding: 8px 10px; font-size: 14px; border: none; border-radius: 4px; cursor: pointer; color: white; }
+        .btn-add { background-color: #3498db; } .btn-add:hover { background-color: #2980b9; }
+        .btn-del { background-color: #e74c3c; } .btn-del:hover { background-color: #c0392b; }
         
         #preview-box {
             text-align: center; margin: 15px 0; padding: 10px;
@@ -81,7 +70,9 @@
         }
 
         .btn-save { background-color: #18bc9c; font-size: 16px; padding: 12px; width: 100%; border:none; border-radius:6px; color:white; cursor:pointer; }
+        .btn-save:hover { background-color: #128f76; }
         .btn-cancel { background-color: #95a5a6; font-size: 16px; padding: 12px; margin-top: 10px; width: 100%; border:none; border-radius:6px; color:white; cursor:pointer; }
+        .btn-cancel:hover { background-color: #7f8c8d; }
     </style>
 </head>
 <body>
@@ -96,36 +87,39 @@
             <span class="cd-num" id="cd-secs">--</span> 秒
         </div>
 
-        <!-- 日曆區 -->
         <div id="calendar-container">
             <div id="calendar"></div>
         </div>
     </div>
 
-    <!-- 組合式填表彈出視窗 -->
+    <!-- 可選可填的智慧彈出視窗 -->
     <div id="modal-overlay">
         <div id="custom-modal">
-            <h3>📝 組合計畫項目</h3>
+            <h3>📝 新增計畫</h3>
+            <p style="font-size: 13px; color: #7f8c8d; text-align: center; margin-top: -10px;">點擊欄位可下拉選擇，也可直接打字</p>
             
             <div class="combo-row">
                 <span style="width: 40px; font-weight: bold;">類型</span>
-                <select id="sel-type" onchange="updatePreview()"></select>
-                <button class="mini-btn btn-add" onclick="manageOption('type', 'add')">➕</button>
-                <button class="mini-btn btn-del" onclick="manageOption('type', 'del')">🗑️</button>
+                <input type="text" id="input-type" list="list-type" oninput="updatePreview()" placeholder="選或填 (例: 新/舊)">
+                <datalist id="list-type"></datalist>
+                <button class="mini-btn btn-add" onclick="manageOption('type', 'add')" title="將輸入文字存入選單">➕</button>
+                <button class="mini-btn btn-del" onclick="manageOption('type', 'del')" title="從選單刪除該文字">🗑️</button>
             </div>
             
             <div class="combo-row">
                 <span style="width: 40px; font-weight: bold;">科目</span>
-                <select id="sel-subject" onchange="updatePreview()"></select>
-                <button class="mini-btn btn-add" onclick="manageOption('subject', 'add')">➕</button>
-                <button class="mini-btn btn-del" onclick="manageOption('subject', 'del')">🗑️</button>
+                <input type="text" id="input-subject" list="list-subject" oninput="updatePreview()" placeholder="選或填 (例: 國綜/英聽)">
+                <datalist id="list-subject"></datalist>
+                <button class="mini-btn btn-add" onclick="manageOption('subject', 'add')" title="將輸入文字存入選單">➕</button>
+                <button class="mini-btn btn-del" onclick="manageOption('subject', 'del')" title="從選單刪除該文字">🗑️</button>
             </div>
 
             <div class="combo-row">
                 <span style="width: 40px; font-weight: bold;">形式</span>
-                <select id="sel-format" onchange="updatePreview()"></select>
-                <button class="mini-btn btn-add" onclick="manageOption('format', 'add')">➕</button>
-                <button class="mini-btn btn-del" onclick="manageOption('format', 'del')">🗑️</button>
+                <input type="text" id="input-format" list="list-format" oninput="updatePreview()" placeholder="選或填 (例: 模考/歷屆)">
+                <datalist id="list-format"></datalist>
+                <button class="mini-btn btn-add" onclick="manageOption('format', 'add')" title="將輸入文字存入選單">➕</button>
+                <button class="mini-btn btn-del" onclick="manageOption('format', 'del')" title="從選單刪除該文字">🗑️</button>
             </div>
             
             <div id="preview-box">預覽: <span id="plan-preview"></span></div>
@@ -136,104 +130,104 @@
     </div>
 
     <script>
-        // --- 1. 動態學測倒數計時 (每秒更新) ---
+        // 1. 動態學測倒數計時
         function startCountdown() {
             var targetDate = new Date('2027-01-22T00:00:00').getTime();
-            
             setInterval(function() {
                 var now = new Date().getTime();
                 var distance = targetDate - now;
-                
                 if (distance < 0) {
                     document.getElementById('countdown-container').innerHTML = "🔥 學測已經開始或結束囉！祝你金榜題名！ 🔥";
                     return;
                 }
-                
-                var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                
-                document.getElementById('cd-days').innerText = days;
-                document.getElementById('cd-hours').innerText = hours.toString().padStart(2, '0');
-                document.getElementById('cd-mins').innerText = minutes.toString().padStart(2, '0');
-                document.getElementById('cd-secs').innerText = seconds.toString().padStart(2, '0');
+                document.getElementById('cd-days').innerText = Math.floor(distance / (1000 * 60 * 60 * 24));
+                document.getElementById('cd-hours').innerText = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+                document.getElementById('cd-mins').innerText = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                document.getElementById('cd-secs').innerText = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
             }, 1000);
         }
         startCountdown();
 
-        // --- 2. 國定假日清單 (2026下半年 ~ 2027全年) ---
-        // 包含中秋、國慶、元旦、春節、228、清明、端午等
+        // 2. 國定假日清單
         var holidays = [
-            '2026-09-17', '2026-10-10', // 2026 下半年
-            '2027-01-01', // 2027 元旦
-            '2027-02-05', '2027-02-06', '2027-02-07', '2027-02-08', '2027-02-09', '2027-02-10', // 2027 春節
-            '2027-02-28', '2027-03-01', // 228連假
-            '2027-04-04', '2027-04-05', // 兒童清明
-            '2027-06-09', // 端午
-            '2027-09-15', // 中秋
-            '2027-10-10'  // 國慶
+            '2026-09-17', '2026-10-10', '2027-01-01', 
+            '2027-02-05', '2027-02-06', '2027-02-07', '2027-02-08', '2027-02-09', '2027-02-10',
+            '2027-02-28', '2027-03-01', '2027-04-04', '2027-04-05', '2027-06-09', '2027-09-15', '2027-10-10'
         ];
 
-        // --- 3. 組合式下拉選單資料與管理 ---
+        // 3. 全新可選可填清單 (加上_v2避免讀到舊的紀錄)
         var comboData = {
-            type: JSON.parse(localStorage.getItem('planTypes')) || ['新', '舊'],
-            subject: JSON.parse(localStorage.getItem('planSubjects')) || ['國', '國綜', '國寫', '英', '數', '數A', '數B', '自物', '自化', '自生', '自地', '社會'],
-            format: JSON.parse(localStorage.getItem('planFormats')) || ['複習', '模考', '歷屆', '中叢', '筆記']
+            type: JSON.parse(localStorage.getItem('planType_v2')) || ['新', '舊'],
+            subject: JSON.parse(localStorage.getItem('planSubject_v2')) || ['國', '國綜', '國寫', '英', '英聽', '英翻', '英作', '數', '自物', '自化', '自生', '自地'],
+            format: JSON.parse(localStorage.getItem('planFormat_v2')) || ['複習', '模考', '歷屆', '中叢', '筆記']
         };
 
-        function renderSelects() {
+        function renderDataLists() {
             ['type', 'subject', 'format'].forEach(function(category) {
-                var select = document.getElementById('sel-' + category);
-                var currentValue = select.value; // 記住目前選擇
-                select.innerHTML = '';
+                var datalist = document.getElementById('list-' + category);
+                datalist.innerHTML = '';
                 comboData[category].forEach(function(opt) {
                     var option = document.createElement('option');
-                    option.value = opt; option.textContent = opt;
-                    select.appendChild(option);
+                    option.value = opt;
+                    datalist.appendChild(option);
                 });
-                if (currentValue && comboData[category].includes(currentValue)) {
-                    select.value = currentValue; // 恢復選擇
-                }
             });
             updatePreview();
         }
 
+        // 動態更新下方的綠色預覽文字
         function updatePreview() {
-            var t = document.getElementById('sel-type').value || '';
-            var s = document.getElementById('sel-subject').value || '';
-            var f = document.getElementById('sel-format').value || '';
-            document.getElementById('plan-preview').innerText = t + ' - ' + s + ' - ' + f;
+            var t = document.getElementById('input-type').value.trim();
+            var s = document.getElementById('input-subject').value.trim();
+            var f = document.getElementById('input-format').value.trim();
+            
+            // 過濾掉空白的欄位，然後用 '-' 串接
+            var parts = [t, s, f].filter(function(val) { return val !== ''; });
+            document.getElementById('plan-preview').innerText = parts.length > 0 ? parts.join(' - ') : '（請輸入或選擇）';
         }
 
+        // 管理清單選項 (讀取當前輸入框的文字來新增或刪除)
         function manageOption(category, action) {
+            var inputEl = document.getElementById('input-' + category);
+            var val = inputEl.value.trim();
             var catName = category === 'type' ? '類型' : (category === 'subject' ? '科目' : '形式');
             
+            if (!val) { alert('請先在左側輸入文字，才能進行新增或刪除喔！'); return; }
+            
             if (action === 'add') {
-                var newVal = prompt('請輸入要新增的「' + catName + '」選項：');
-                if (newVal && newVal.trim() !== '') {
-                    if (!comboData[category].includes(newVal.trim())) {
-                        comboData[category].push(newVal.trim());
-                    }
+                if (!comboData[category].includes(val)) {
+                    comboData[category].push(val);
+                    alert('已成功將「' + val + '」加入' + catName + '清單！');
+                } else {
+                    alert('「' + val + '」已經在清單裡囉！');
                 }
             } else if (action === 'del') {
-                var toDel = document.getElementById('sel-' + category).value;
-                if (toDel && confirm('確定要刪除「' + toDel + '」這個' + catName + '嗎？')) {
-                    comboData[category] = comboData[category].filter(function(v) { return v !== toDel; });
+                if (comboData[category].includes(val)) {
+                    if (confirm('確定要從清單中永久刪除「' + val + '」嗎？')) {
+                        comboData[category] = comboData[category].filter(function(v) { return v !== val; });
+                        inputEl.value = ''; // 刪除後清空輸入框
+                    }
+                } else {
+                    alert('預設清單裡沒有這個詞彙喔！');
                 }
             }
-            // 存檔並重新渲染
-            localStorage.setItem('plan' + category.charAt(0).toUpperCase() + category.slice(1) + 's', JSON.stringify(comboData[category]));
-            renderSelects();
+            // 存檔並重新渲染下拉清單
+            localStorage.setItem('plan' + category.charAt(0).toUpperCase() + category.slice(1) + '_v2', JSON.stringify(comboData[category]));
+            renderDataLists();
+            updatePreview();
         }
 
-        // --- 4. 彈出視窗與日曆互動 ---
+        // 4. 彈出視窗與日曆互動
         var currentSelectInfo = null;
         var calendar;
 
         function openModal(info) {
             currentSelectInfo = info;
-            renderSelects();
+            // 每次打開前先清空上次的輸入
+            document.getElementById('input-type').value = '';
+            document.getElementById('input-subject').value = '';
+            document.getElementById('input-format').value = '';
+            renderDataLists();
             document.getElementById('modal-overlay').style.display = 'flex';
         }
 
@@ -245,18 +239,17 @@
 
         function saveEvent() {
             var finalTitle = document.getElementById('plan-preview').innerText;
-            if (finalTitle && currentSelectInfo) {
+            if (finalTitle && finalTitle !== '（請輸入或選擇）' && currentSelectInfo) {
                 calendar.addEvent({
-                    id: String(Date.now()),
-                    title: finalTitle,
-                    start: currentSelectInfo.startStr,
-                    end: currentSelectInfo.endStr,
-                    allDay: currentSelectInfo.allDay,
+                    id: String(Date.now()), title: finalTitle,
+                    start: currentSelectInfo.startStr, end: currentSelectInfo.endStr, allDay: currentSelectInfo.allDay,
                     backgroundColor: '#18bc9c', borderColor: '#18bc9c'
                 });
                 saveEventsToLocalStorage();
+                closeModal();
+            } else {
+                alert('計畫內容不能為空喔！');
             }
-            closeModal();
         }
 
         function saveEventsToLocalStorage() {
@@ -266,32 +259,39 @@
             localStorage.setItem('myCalendarEvents', JSON.stringify(currentEvents));
         }
 
-        // --- 5. 日曆初始化 ---
+        // 5. 日曆初始化
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
             var savedEvents = JSON.parse(localStorage.getItem('myCalendarEvents')) || [];
 
             calendar = new FullCalendar.Calendar(calendarEl, {
                 locale: 'zh-tw',
+                // 自訂一個為期5個月的專屬視圖
+                views: {
+                    examYear: {
+                        type: 'multiMonth',
+                        duration: { months: 5 }, // 一次顯示5個月
+                        buttonText: '年'
+                    }
+                },
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay'
+                    right: 'examYear,dayGridMonth,timeGridWeek,timeGridDay'
                 },
-                buttonText: { year: '年', month: '月', week: '周', day: '日', today: '今天' },
+                buttonText: { month: '月', week: '周', day: '日', today: '今天' },
                 initialView: 'dayGridMonth',
                 
-                // 僅限制開始時間，不限制結束時間，這樣就能順利切換到 2027 年
+                // 強制將日曆的起點設定在 2026年9月
+                initialDate: '2026-09-01',
                 validRange: { start: '2026-09-01' },
 
-                // 將特定的國定假日加上紅色背景 class
+                // 將特定的國定假日加上紅色背景
                 dayCellClassNames: function(arg) {
                     var dateStr = arg.date.getFullYear() + '-' + 
                                   String(arg.date.getMonth() + 1).padStart(2, '0') + '-' + 
                                   String(arg.date.getDate()).padStart(2, '0');
-                    if (holidays.includes(dateStr)) {
-                        return ['holiday-red'];
-                    }
+                    if (holidays.includes(dateStr)) return ['holiday-red'];
                     return [];
                 },
 
