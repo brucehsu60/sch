@@ -51,17 +51,19 @@
             background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center;
         }
         #custom-modal {
-            background: white; padding: 25px; border-radius: 12px; width: 400px;
+            background: white; padding: 25px; border-radius: 12px; width: 420px; /* 稍微加寬以容納三顆按鈕 */
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
         #custom-modal h3 { margin-top: 0; color: #2c3e50; text-align: center; }
         
-        .combo-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .combo-row { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
         .combo-row input {
-            flex: 1; padding: 8px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;
+            flex: 1; padding: 8px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; min-width: 0;
         }
-        .mini-btn { padding: 8px 10px; font-size: 14px; border: none; border-radius: 4px; cursor: pointer; color: white; }
+        .mini-btn { padding: 8px; font-size: 14px; border: none; border-radius: 4px; cursor: pointer; color: white; }
+        
         .btn-add { background-color: #3498db; } .btn-add:hover { background-color: #2980b9; }
+        .btn-clear { background-color: #f39c12; } .btn-clear:hover { background-color: #e67e22; }
         .btn-del { background-color: #e74c3c; } .btn-del:hover { background-color: #c0392b; }
         
         #preview-box {
@@ -99,26 +101,29 @@
             <p style="font-size: 13px; color: #7f8c8d; text-align: center; margin-top: -10px;">點擊欄位可下拉選擇，也可直接打字</p>
             
             <div class="combo-row">
-                <span style="width: 40px; font-weight: bold;">類型</span>
-                <input type="text" id="input-type" list="list-type" oninput="updatePreview()" placeholder="選或填 (例: 新/舊)">
+                <span style="width: 35px; font-weight: bold;">類型</span>
+                <input type="text" id="input-type" list="list-type" oninput="updatePreview()" placeholder="選/填 (例: 新/舊)">
                 <datalist id="list-type"></datalist>
                 <button class="mini-btn btn-add" onclick="manageOption('type', 'add')" title="將輸入文字存入選單">➕</button>
+                <button class="mini-btn btn-clear" onclick="manageOption('type', 'clear')" title="清空此輸入框">🧹</button>
                 <button class="mini-btn btn-del" onclick="manageOption('type', 'del')" title="從選單刪除該文字">🗑️</button>
             </div>
             
             <div class="combo-row">
-                <span style="width: 40px; font-weight: bold;">科目</span>
-                <input type="text" id="input-subject" list="list-subject" oninput="updatePreview()" placeholder="選或填 (例: 國綜/英聽)">
+                <span style="width: 35px; font-weight: bold;">科目</span>
+                <input type="text" id="input-subject" list="list-subject" oninput="updatePreview()" placeholder="選/填 (例: 國/英聽)">
                 <datalist id="list-subject"></datalist>
                 <button class="mini-btn btn-add" onclick="manageOption('subject', 'add')" title="將輸入文字存入選單">➕</button>
+                <button class="mini-btn btn-clear" onclick="manageOption('subject', 'clear')" title="清空此輸入框">🧹</button>
                 <button class="mini-btn btn-del" onclick="manageOption('subject', 'del')" title="從選單刪除該文字">🗑️</button>
             </div>
 
             <div class="combo-row">
-                <span style="width: 40px; font-weight: bold;">形式</span>
-                <input type="text" id="input-format" list="list-format" oninput="updatePreview()" placeholder="選或填 (例: 模考/歷屆)">
+                <span style="width: 35px; font-weight: bold;">形式</span>
+                <input type="text" id="input-format" list="list-format" oninput="updatePreview()" placeholder="選/填 (例: 模考/月考)">
                 <datalist id="list-format"></datalist>
                 <button class="mini-btn btn-add" onclick="manageOption('format', 'add')" title="將輸入文字存入選單">➕</button>
+                <button class="mini-btn btn-clear" onclick="manageOption('format', 'clear')" title="清空此輸入框">🧹</button>
                 <button class="mini-btn btn-del" onclick="manageOption('format', 'del')" title="從選單刪除該文字">🗑️</button>
             </div>
             
@@ -155,11 +160,13 @@
             '2027-02-28', '2027-03-01', '2027-04-04', '2027-04-05', '2027-06-09', '2027-09-15', '2027-10-10'
         ];
 
-        // 3. 全新可選可填清單 (加上_v2避免讀到舊的紀錄)
+        // 3. 全新可選可填清單 (加上_v3確保讀取到你最新的設定要求)
         var comboData = {
-            type: JSON.parse(localStorage.getItem('planType_v2')) || ['新', '舊'],
-            subject: JSON.parse(localStorage.getItem('planSubject_v2')) || ['國', '國綜', '國寫', '英', '英聽', '英翻', '英作', '數', '自物', '自化', '自生', '自地'],
-            format: JSON.parse(localStorage.getItem('planFormat_v2')) || ['複習', '模考', '歷屆', '中叢', '筆記']
+            type: JSON.parse(localStorage.getItem('planType_v3')) || ['新', '舊'],
+            // 確保第一個是「國」
+            subject: JSON.parse(localStorage.getItem('planSubject_v3')) || ['國', '國綜', '國寫', '英', '英聽', '英翻', '英作', '數', '自物', '自化', '自生', '自地'],
+            // 加入「月考」、「平時考」
+            format: JSON.parse(localStorage.getItem('planFormat_v3')) || ['複習', '模考', '月考', '平時考', '歷屆', '中叢', '筆記']
         };
 
         function renderDataLists() {
@@ -186,9 +193,17 @@
             document.getElementById('plan-preview').innerText = parts.length > 0 ? parts.join(' - ') : '（請輸入或選擇）';
         }
 
-        // 管理清單選項 (讀取當前輸入框的文字來新增或刪除)
+        // 管理清單選項 (新增、清除、刪除)
         function manageOption(category, action) {
             var inputEl = document.getElementById('input-' + category);
+            
+            // 如果是點擊「清除鍵」，則清空輸入框並更新預覽
+            if (action === 'clear') {
+                inputEl.value = '';
+                updatePreview();
+                return;
+            }
+
             var val = inputEl.value.trim();
             var catName = category === 'type' ? '類型' : (category === 'subject' ? '科目' : '形式');
             
@@ -211,8 +226,9 @@
                     alert('預設清單裡沒有這個詞彙喔！');
                 }
             }
+            
             // 存檔並重新渲染下拉清單
-            localStorage.setItem('plan' + category.charAt(0).toUpperCase() + category.slice(1) + '_v2', JSON.stringify(comboData[category]));
+            localStorage.setItem('plan' + category.charAt(0).toUpperCase() + category.slice(1) + '_v3', JSON.stringify(comboData[category]));
             renderDataLists();
             updatePreview();
         }
@@ -266,11 +282,10 @@
 
             calendar = new FullCalendar.Calendar(calendarEl, {
                 locale: 'zh-tw',
-                // 自訂一個為期5個月的專屬視圖
                 views: {
                     examYear: {
                         type: 'multiMonth',
-                        duration: { months: 5 }, // 一次顯示5個月
+                        duration: { months: 5 },
                         buttonText: '年'
                     }
                 },
@@ -282,11 +297,9 @@
                 buttonText: { month: '月', week: '周', day: '日', today: '今天' },
                 initialView: 'dayGridMonth',
                 
-                // 強制將日曆的起點設定在 2026年9月
                 initialDate: '2026-09-01',
                 validRange: { start: '2026-09-01' },
 
-                // 將特定的國定假日加上紅色背景
                 dayCellClassNames: function(arg) {
                     var dateStr = arg.date.getFullYear() + '-' + 
                                   String(arg.date.getMonth() + 1).padStart(2, '0') + '-' + 
