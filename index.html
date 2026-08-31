@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的年度計畫表</title>
+    
+    <!-- 引入 FullCalendar 核心與語言包 -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales-all.global.min.js"></script>
+
+    <style>
+        body {
+            margin: 40px 10px;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, '微軟正黑體', sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+        
+        #calendar-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        #calendar {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        /* 自訂一些按鈕顏色讓它更好看 */
+        .fc-button-primary {
+            background-color: #2c3e50 !important;
+            border-color: #2c3e50 !important;
+        }
+        .fc-button-primary:hover {
+            background-color: #1a252f !important;
+        }
+        .fc-button-active {
+            background-color: #18bc9c !important;
+            border-color: #18bc9c !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="calendar-container">
+        <h2 style="text-align: center; color: #2c3e50; margin-bottom: 20px;">📅 我的專屬計畫表</h2>
+        <div id="calendar"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+
+            // 從瀏覽器的 LocalStorage 讀取已儲存的計畫資料
+            var savedEvents = JSON.parse(localStorage.getItem('myCalendarEvents')) || [];
+
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                // 設定語言為繁體中文
+                locale: 'zh-tw',
+                
+                // 頂部工具列設定
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                
+                // 自訂按鈕文字
+                buttonText: {
+                    year: '年',
+                    month: '月',
+                    week: '周',
+                    day: '日',
+                    today: '今天'
+                },
+                
+                // 預設顯示月曆
+                initialView: 'dayGridMonth',
+                
+                // 允許點擊和拖曳選擇日期來新增計畫
+                selectable: true,
+                selectMirror: true,
+                
+                // 允許拖曳修改計畫時間
+                editable: true,
+                
+                // 載入儲存的計畫
+                events: savedEvents,
+
+                // 當使用者選取日期/時間時觸發新增功能
+                select: function(info) {
+                    var title = prompt('請輸入您的計畫名稱：');
+                    if (title) {
+                        var newEvent = {
+                            id: String(Date.now()), // 用時間戳記產生唯一 ID
+                            title: title,
+                            start: info.startStr,
+                            end: info.endStr,
+                            allDay: info.allDay,
+                            backgroundColor: '#18bc9c', // 預設顏色
+                            borderColor: '#18bc9c'
+                        };
+                        calendar.addEvent(newEvent);
+                        saveEventsToLocalStorage(); // 儲存資料
+                    }
+                    calendar.unselect();
+                },
+
+                // 當使用者點擊現有計畫時觸發刪除功能
+                eventClick: function(info) {
+                    if (confirm('確定要刪除「' + info.event.title + '」這個計畫嗎？')) {
+                        info.event.remove();
+                        saveEventsToLocalStorage(); // 儲存資料
+                    }
+                },
+
+                // 當使用者拖曳改變計畫時間後儲存
+                eventDrop: function(info) {
+                    saveEventsToLocalStorage();
+                },
+                
+                // 當使用者拉長/縮短計畫時間後儲存
+                eventResize: function(info) {
+                    saveEventsToLocalStorage();
+                }
+            });
+
+            calendar.render();
+
+            // 將所有計畫打包存入 LocalStorage 的函數
+            function saveEventsToLocalStorage() {
+                var currentEvents = calendar.getEvents().map(function(e) {
+                    return {
+                        id: e.id,
+                        title: e.title,
+                        start: e.startStr,
+                        end: e.endStr,
+                        allDay: e.allDay
+                    };
+                });
+                localStorage.setItem('myCalendarEvents', JSON.stringify(currentEvents));
+            }
+        });
+    </script>
+</body>
+</html>
