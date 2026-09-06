@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>學測計畫表</title>
     
     <!-- 引入 FullCalendar 核心與語言包 -->
@@ -16,6 +17,8 @@
             font-family: 'Helvetica Neue', Helvetica, Arial, '微軟正黑體', sans-serif;
             background-color: #f4f6f8;
             color: #333;
+            /* 防止手機點擊時雙擊放大，提升觸控反應速度 */
+            touch-action: manipulation; 
         }
         
         #app-container { max-width: 1200px; margin: 0 auto; }
@@ -62,13 +65,14 @@
             background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center;
         }
         #custom-modal {
-            background: white; padding: 25px; border-radius: 12px; width: 440px; 
+            background: white; padding: 25px; border-radius: 12px; width: 440px; max-width: 90%;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
         #custom-modal h3 { margin-top: 0; color: #2c3e50; text-align: center; }
         
         .combo-row { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
         .combo-row input {
+            /* font-size 必須為 16px，否則 iPhone 點擊輸入框會自動強迫畫面放大 */
             flex: 1; padding: 8px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; min-width: 0;
         }
         .mini-btn { padding: 8px; font-size: 14px; border: none; border-radius: 4px; cursor: pointer; color: white; }
@@ -102,10 +106,10 @@
 
         <!-- 匯出匯入功能區 -->
         <div id="sync-container">
-            <button class="btn-sync btn-export" onclick="exportData()">📥 匯出資料 (備份)</button>
+            <button class="btn-sync btn-export" onclick="exportData()">📥 匯出 (備份)</button>
             <label class="btn-sync btn-import">
                 <input type="file" accept=".json" style="display:none;" onchange="importData(event)">
-                📤 匯入資料 (讀取)
+                📤 匯入 (讀取)
             </label>
         </div>
 
@@ -149,7 +153,7 @@
 
             <div class="combo-row">
                 <span style="width: 40px; font-weight: bold;">範圍</span>
-                <input type="text" id="input-range" list="list-range" oninput="updatePreview()" placeholder="選/填 (可留白, 例: 1~4冊)">
+                <input type="text" id="input-range" list="list-range" oninput="updatePreview()" placeholder="選/填 (例: 1~4冊)">
                 <datalist id="list-range"></datalist>
                 <button class="mini-btn btn-add" onclick="manageOption('range', 'add')" title="將輸入文字存入選單">➕</button>
                 <button class="mini-btn btn-clear" onclick="manageOption('range', 'clear')" title="清空此輸入框">🧹</button>
@@ -164,7 +168,7 @@
     </div>
 
     <script>
-        // --- 匯出資料功能 ---
+        // --- 匯出資料功能 (針對 iOS Safari 下載進行特化修改) ---
         function exportData() {
             var backupData = {
                 events: localStorage.getItem('myCalendarEvents'),
@@ -173,13 +177,21 @@
                 planFormat: localStorage.getItem('planFormat_v4'),
                 planRange: localStorage.getItem('planRange_v4')
             };
-            var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
+            
+            // 使用 Blob 物件，這是在 iPhone 上唯一穩定觸發下載的方式
+            var jsonStr = JSON.stringify(backupData);
+            var blob = new Blob([jsonStr], { type: "application/json" });
+            var url = URL.createObjectURL(blob);
+
             var downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("href", url);
             downloadAnchorNode.setAttribute("download", "學測計畫表_備份.json");
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
+            
+            // 釋放記憶體
+            setTimeout(function() { URL.revokeObjectURL(url); }, 100);
         }
 
         // --- 匯入資料功能 ---
@@ -236,7 +248,7 @@
             type: JSON.parse(localStorage.getItem('planType_v4')) || ['新', '舊'],
             subject: JSON.parse(localStorage.getItem('planSubject_v4')) || ['國', '國綜', '國寫', '英', '英聽', '英翻', '英作', '數', '自物', '自化', '自生', '自地'],
             format: JSON.parse(localStorage.getItem('planFormat_v4')) || ['複習', '模考', '月考', '平時考', '歷屆', '中叢', '筆記'],
-            range: JSON.parse(localStorage.getItem('planRange_v4')) || ['第一冊', '第二冊', '第三冊', '第四冊', '第五冊', '全'] // 範圍的預設清單
+            range: JSON.parse(localStorage.getItem('planRange_v4')) || ['第一冊', '第二冊', '第三冊', '第四冊', '第五冊', '全'] 
         };
 
         function renderDataLists() {
@@ -362,6 +374,10 @@
                 
                 initialDate: '2026-09-01',
                 validRange: { start: '2026-09-01' },
+
+                // ▼▼▼ 非常重要：這行設定解決了 iPhone 點擊無反應的問題 ▼▼▼
+                selectLongPressDelay: 100, // 將長按判定從預設的 1000 毫秒縮短為 100 毫秒 (點一下即觸發)
+                // ▲▲▲ ▲▲▲ ▲▲▲ ▲▲▲ ▲▲▲
 
                 dayCellClassNames: function(arg) {
                     var dateStr = arg.date.getFullYear() + '-' + 
