@@ -1,0 +1,410 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>學測計畫表</title>
+    
+    <!-- 引入 FullCalendar 核心與語言包 -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales-all.global.min.js"></script>
+
+    <style>
+        body {
+            margin: 20px 10px;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, '微軟正黑體', sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+            /* 防止手機點擊時雙擊放大，提升觸控反應速度 */
+            touch-action: manipulation; 
+        }
+        
+        #app-container { max-width: 1200px; margin: 0 auto; }
+
+        /* 動態倒數計時器樣式 */
+        #countdown-container {
+            background: white; text-align: center; padding: 20px;
+            border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 15px; font-size: 22px; font-weight: bold; color: #2c3e50;
+        }
+        .cd-num {
+            color: #e74c3c; font-size: 32px; margin: 0 4px;
+            display: inline-block; min-width: 40px; text-align: center;
+        }
+
+        /* 跨機同步按鈕區 */
+        #sync-container {
+            text-align: right; margin-bottom: 15px;
+        }
+        .btn-sync {
+            display: inline-block; padding: 8px 15px; margin-left: 10px; font-size: 14px;
+            border: none; border-radius: 6px; cursor: pointer; color: white; text-decoration: none; font-weight: bold;
+        }
+        .btn-export { background-color: #8e44ad; } .btn-export:hover { background-color: #732d91; }
+        .btn-import { background-color: #2980b9; } .btn-import:hover { background-color: #1c5980; }
+        .btn-replace { background-color: #c0392b; } .btn-replace:hover { background-color: #922b21; }
+        @media (max-width: 600px) {
+            #sync-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+            .btn-sync { margin: 0; }
+        }
+
+        /* 日曆容器樣式 */
+        #calendar-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+
+        .fc-button-primary { background-color: #2c3e50 !important; border-color: #2c3e50 !important; }
+        .fc-button-primary:hover { background-color: #1a252f !important; }
+        .fc-button-active { background-color: #18bc9c !important; border-color: #18bc9c !important; }
+
+        /* 放假日 顯示為紅色 */
+        .fc-day-sat, .fc-day-sun, .holiday-red { background-color: #fff5f5 !important; }
+        .fc-col-header-cell.fc-day-sat a, .fc-col-header-cell.fc-day-sun a { color: #e74c3c !important; }
+        .fc-day-sat .fc-daygrid-day-number, .fc-day-sun .fc-daygrid-day-number, .holiday-red .fc-daygrid-day-number { 
+            color: #e74c3c !important; font-weight: bold; 
+        }
+
+        /* 組合式彈出視窗 (Modal) 樣式 */
+        #modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center;
+        }
+        #custom-modal {
+            background: white; padding: 25px; border-radius: 12px; width: 440px; max-width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        #custom-modal h3 { margin-top: 0; color: #2c3e50; text-align: center; }
+        
+        .combo-row { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+        .combo-row input {
+            /* font-size 必須為 16px，否則 iPhone 點擊輸入框會自動強迫畫面放大 */
+            flex: 1; padding: 8px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; min-width: 0;
+        }
+        .mini-btn { padding: 8px; font-size: 14px; border: none; border-radius: 4px; cursor: pointer; color: white; }
+        
+        .btn-add { background-color: #3498db; } .btn-add:hover { background-color: #2980b9; }
+        .btn-clear { background-color: #f39c12; } .btn-clear:hover { background-color: #e67e22; }
+        .btn-del { background-color: #e74c3c; } .btn-del:hover { background-color: #c0392b; }
+        
+        #preview-box {
+            text-align: center; margin: 15px 0; padding: 10px;
+            background: #e8f8f5; color: #16a085; font-weight: bold; font-size: 18px; border-radius: 6px;
+        }
+
+        .btn-save { background-color: #18bc9c; font-size: 16px; padding: 12px; width: 100%; border:none; border-radius:6px; color:white; cursor:pointer; }
+        .btn-save:hover { background-color: #128f76; }
+        .btn-cancel { background-color: #95a5a6; font-size: 16px; padding: 12px; margin-top: 10px; width: 100%; border:none; border-radius:6px; color:white; cursor:pointer; }
+        .btn-cancel:hover { background-color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <!-- 動態倒數計時區 -->
+        <div id="countdown-container">
+            🔥 距離 2027 學測 (1/22) 還有 <br>
+            <span class="cd-num" id="cd-days">--</span> 天 
+            <span class="cd-num" id="cd-hours">--</span> 時 
+            <span class="cd-num" id="cd-mins">--</span> 分 
+            <span class="cd-num" id="cd-secs">--</span> 秒
+        </div>
+
+        <!-- 匯出匯入功能區 -->
+        <div id="sync-container">
+            <button class="btn-sync btn-export" onclick="exportData()">📥 匯出 (備份)</button>
+            <label class="btn-sync btn-import">
+                <input type="file" accept=".json,application/json" style="display:none;" onchange="importData(event, 'merge')">
+                📤 匯入 (合併)
+            </label>
+            <label class="btn-sync btn-replace">
+                <input type="file" accept=".json,application/json" style="display:none;" onchange="importData(event, 'replace')">
+                ⚠️ 全部取代
+            </label>
+        </div>
+
+        <div id="calendar-container">
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+    <!-- 可選可填的智慧彈出視窗 -->
+    <div id="modal-overlay">
+        <div id="custom-modal">
+            <h3>📝 新增計畫</h3>
+            <p style="font-size: 13px; color: #7f8c8d; text-align: center; margin-top: -10px;">點擊欄位可下拉選擇，也可直接打字</p>
+            
+            <div class="combo-row">
+                <span style="width: 40px; font-weight: bold;">類型</span>
+                <input type="text" id="input-type" list="list-type" oninput="updatePreview()" placeholder="選/填 (例: 新/舊)">
+                <datalist id="list-type"></datalist>
+                <button class="mini-btn btn-add" onclick="manageOption('type', 'add')" title="將輸入文字存入選單">➕</button>
+                <button class="mini-btn btn-clear" onclick="manageOption('type', 'clear')" title="清空此輸入框">🧹</button>
+                <button class="mini-btn btn-del" onclick="manageOption('type', 'del')" title="從選單刪除該文字">🗑️</button>
+            </div>
+            
+            <div class="combo-row">
+                <span style="width: 40px; font-weight: bold;">科目</span>
+                <input type="text" id="input-subject" list="list-subject" oninput="updatePreview()" placeholder="選/填 (例: 國/英聽)">
+                <datalist id="list-subject"></datalist>
+                <button class="mini-btn btn-add" onclick="manageOption('subject', 'add')" title="將輸入文字存入選單">➕</button>
+                <button class="mini-btn btn-clear" onclick="manageOption('subject', 'clear')" title="清空此輸入框">🧹</button>
+                <button class="mini-btn btn-del" onclick="manageOption('subject', 'del')" title="從選單刪除該文字">🗑️</button>
+            </div>
+
+            <div class="combo-row">
+                <span style="width: 40px; font-weight: bold;">形式</span>
+                <input type="text" id="input-format" list="list-format" oninput="updatePreview()" placeholder="選/填 (例: 模考/月考)">
+                <datalist id="list-format"></datalist>
+                <button class="mini-btn btn-add" onclick="manageOption('format', 'add')" title="將輸入文字存入選單">➕</button>
+                <button class="mini-btn btn-clear" onclick="manageOption('format', 'clear')" title="清空此輸入框">🧹</button>
+                <button class="mini-btn btn-del" onclick="manageOption('format', 'del')" title="從選單刪除該文字">🗑️</button>
+            </div>
+
+            <div class="combo-row">
+                <span style="width: 40px; font-weight: bold;">範圍</span>
+                <input type="text" id="input-range" list="list-range" oninput="updatePreview()" placeholder="選/填 (例: 1~4冊)">
+                <datalist id="list-range"></datalist>
+                <button class="mini-btn btn-add" onclick="manageOption('range', 'add')" title="將輸入文字存入選單">➕</button>
+                <button class="mini-btn btn-clear" onclick="manageOption('range', 'clear')" title="清空此輸入框">🧹</button>
+                <button class="mini-btn btn-del" onclick="manageOption('range', 'del')" title="從選單刪除該文字">🗑️</button>
+            </div>
+            
+            <div id="preview-box">預覽: <span id="plan-preview"></span></div>
+            
+            <button class="btn-save" onclick="saveEvent()">✔️ 確認加入計畫</button>
+            <button class="btn-cancel" onclick="closeModal()">❌ 取消</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 備份與匯入 ---
+        var backupKeys = {
+            events: 'myCalendarEvents',
+            planType: 'planType_v4',
+            planSubject: 'planSubject_v4',
+            planFormat: 'planFormat_v4',
+            planRange: 'planRange_v4'
+        };
+
+        function getBackupData() {
+            var data = {};
+            Object.keys(backupKeys).forEach(function(key) {
+                data[key] = localStorage.getItem(backupKeys[key]);
+            });
+            return data;
+        }
+
+        function downloadBackupData(data, filename) {
+            var blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            var url = URL.createObjectURL(blob);
+            var anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = filename;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+        }
+
+        function exportData() {
+            downloadBackupData(getBackupData(), '學測計畫表_備份.json');
+        }
+
+        function parseBackupValue(value, key) {
+            if (value === null || value === undefined) return null;
+            var parsed = typeof value === 'string' ? JSON.parse(value) : value;
+            if (key === 'events' && !Array.isArray(parsed)) throw new Error('計畫資料格式錯誤');
+            if (key !== 'events' && !Array.isArray(parsed)) throw new Error('選單資料格式錯誤');
+            return parsed;
+        }
+
+        function eventIdentity(item) {
+            if (item && item.id !== undefined && item.id !== null && String(item.id) !== '') {
+                return 'id:' + String(item.id);
+            }
+            return 'event:' + [item && item.title, item && item.start, item && item.end].join('|');
+        }
+
+        function mergeEvents(existing, incoming) {
+            var merged = [];
+            var positions = Object.create(null);
+            existing.concat(incoming).forEach(function(item) {
+                var key = eventIdentity(item);
+                if (Object.prototype.hasOwnProperty.call(positions, key)) {
+                    // 相同 ID 時以匯入版本為準；其他不同計畫保留。
+                    merged[positions[key]] = item;
+                } else {
+                    positions[key] = merged.length;
+                    merged.push(item);
+                }
+            });
+            return merged;
+        }
+
+        function mergeOptions(existing, incoming) {
+            var result = [];
+            existing.concat(incoming).forEach(function(value) {
+                if (!result.includes(value)) result.push(value);
+            });
+            return result;
+        }
+
+        // 匯入前先完整檢查檔案，再下載本機備份；合併模式保留舊資料。
+        function importData(event, mode) {
+            var file = event.target.files[0];
+            if (!file) return;
+            var isReplace = mode === 'replace';
+            if (isReplace && !confirm('全部取代會以備份內容覆蓋目前資料。匯入前會先下載目前資料備份，確定繼續嗎？')) {
+                event.target.value = '';
+                return;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var backupData = JSON.parse(e.target.result);
+                    if (!backupData || typeof backupData !== 'object' || Array.isArray(backupData)) {
+                        throw new Error('備份檔格式錯誤');
+                    }
+
+                    var keys = Object.keys(backupKeys);
+                    var incoming = {};
+                    keys.forEach(function(key) {
+                        incoming[key] = parseBackupValue(backupData[key], key);
+                    });
+                    if (keys.every(function(key) { return incoming[key] === null; })) {
+                        throw new Error('備份檔沒有可匯入的資料');
+                    }
+
+                    var current = getBackupData();
+                    var currentParsed = {};
+                    keys.forEach(function(key) {
+                        currentParsed[key] = parseBackupValue(current[key], key) || [];
+                    });
+                    var result = {};
+                    keys.forEach(function(key) {
+                        if (isReplace) {
+                            result[key] = incoming[key] === null ? [] : incoming[key];
+                        } else if (incoming[key] === null) {
+                            result[key] = currentParsed[key];
+                        } else if (key === 'events') {
+                            result[key] = mergeEvents(currentParsed[key], incoming[key]);
+                        } else {
+                            result[key] = mergeOptions(currentParsed[key], incoming[key]);
+                        }
+                    });
+
+                    // 先備份匯入前資料；若儲存失敗，回復原本的本機資料。
+                    downloadBackupData(current, '學測計畫表_匯入前自動備份.json');
+                    try {
+                        keys.forEach(function(key) {
+                            if (result[key] !== null) {
+                                localStorage.setItem(backupKeys[key], JSON.stringify(result[key]));
+                            }
+                        });
+                    } catch (storageError) {
+                        keys.forEach(function(key) {
+                            var oldValue = current[key];
+                            if (oldValue === null) localStorage.removeItem(backupKeys[key]);
+                            else localStorage.setItem(backupKeys[key], oldValue);
+                        });
+                        throw storageError;
+                    }
+
+                    var importedCount = incoming.events ? incoming.events.length : 0;
+                    alert((isReplace ? '✅ 已全部取代' : '✅ 已合併') + '！備份中的 ' + importedCount + ' 筆計畫已處理；匯入前資料備份也已下載。網頁即將重新載入。');
+                    location.reload();
+                } catch (err) {
+                    alert('❌ 匯入失敗，原有資料已保留。請確認選擇的是有效的學測計畫表 JSON 備份檔。');
+                    console.error(err);
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.onerror = function() {
+                alert('❌ 無法讀取檔案，原有資料未變更。');
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+            if (calendar) calendar.unselect();
+            currentSelectInfo = null;
+        }
+
+        function saveEvent() {
+            var finalTitle = document.getElementById('plan-preview').innerText;
+            if (finalTitle && finalTitle !== '（請輸入或選擇）' && currentSelectInfo) {
+                calendar.addEvent({
+                    id: String(Date.now()), title: finalTitle,
+                    start: currentSelectInfo.startStr, end: currentSelectInfo.endStr, allDay: currentSelectInfo.allDay,
+                    backgroundColor: '#18bc9c', borderColor: '#18bc9c'
+                });
+                saveEventsToLocalStorage();
+                closeModal();
+            } else {
+                alert('計畫內容不能為空喔！');
+            }
+        }
+
+        function saveEventsToLocalStorage() {
+            var currentEvents = calendar.getEvents().map(function(e) {
+                return { id: e.id, title: e.title, start: e.startStr, end: e.endStr, allDay: e.allDay };
+            });
+            localStorage.setItem('myCalendarEvents', JSON.stringify(currentEvents));
+        }
+
+        // 5. 日曆初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var savedEvents = JSON.parse(localStorage.getItem('myCalendarEvents')) || [];
+
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                locale: 'zh-tw',
+                views: { examYear: { type: 'multiMonth', duration: { months: 5 }, buttonText: '年' } },
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'examYear,dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                buttonText: { month: '月', week: '周', day: '日', today: '今天' },
+                initialView: 'dayGridMonth',
+                
+                initialDate: '2026-09-01',
+                validRange: { start: '2026-09-01' },
+
+                // ▼▼▼ 非常重要：這行設定解決了 iPhone 點擊無反應的問題 ▼▼▼
+                selectLongPressDelay: 100, // 將長按判定從預設的 1000 毫秒縮短為 100 毫秒 (點一下即觸發)
+                // ▲▲▲ ▲▲▲ ▲▲▲ ▲▲▲ ▲▲▲
+
+                dayCellClassNames: function(arg) {
+                    var dateStr = arg.date.getFullYear() + '-' + 
+                                  String(arg.date.getMonth() + 1).padStart(2, '0') + '-' + 
+                                  String(arg.date.getDate()).padStart(2, '0');
+                    if (holidays.includes(dateStr)) return ['holiday-red'];
+                    return [];
+                },
+
+                selectable: true,
+                selectMirror: true,
+                editable: true,
+                events: savedEvents,
+
+                select: function(info) { openModal(info); },
+                eventClick: function(info) {
+                    if (confirm('確定要刪除計畫：「' + info.event.title + '」嗎？')) {
+                        info.event.remove();
+                        saveEventsToLocalStorage();
+                    }
+                },
+                eventDrop: function() { saveEventsToLocalStorage(); },
+                eventResize: function() { saveEventsToLocalStorage(); }
+            });
+
+            calendar.render();
+        });
+    </script>
+</body>
+</html>
